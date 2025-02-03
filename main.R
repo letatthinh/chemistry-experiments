@@ -95,10 +95,9 @@ Base_Experiment <- R6Class(
       self$df <- read_excel(file_path, col_names=col_names)
     },
     
-    # 
+    # Check if the experiment name is provided in cell A2
     has_experiment_name = function(experiment_name) {
       cell_value <- get_cell_value(self$df, "A2")
-      
       return(cell_value == experiment_name)
     }
   )
