@@ -13,7 +13,7 @@ library(stringr) # Work with strings
 # SETTINGS ---------------------------------------------------------------------
 # Note: Only general settings go here
 INFILE <- "expt06.xlsx"
-EXPERIMENT_NAME <- "Experiment 6:  Limiting Reactantsa"
+EXPERIMENT_NAME <- "Experiment 6:  Limiting Reactants"
 
 
 
