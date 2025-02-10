@@ -27,7 +27,7 @@ File_Extension <- list(xlsx="xlsx", csv="csv")
 # UTILITIES --------------------------------------------------------------------
 # Note: Only functions that support you in doing something in multiple places go
 # here
-# Get column index of a column in the excel file by name
+# Get the index of a column in the excel file by name
 get_column_index <- function(column_name) {
   column_index <- 0
   
@@ -93,19 +93,34 @@ Base_Experiment <- R6Class(
     ) {
       # self keyword helps reference to class properties [and methods ?]
       self$df <- read_excel(file_path, col_names=col_names)
+
+      # Requirement 1.a: Check if the experiment has a matching name in cell A2;
+      # exit if no title is found or not matching the name
+      self$check_experiment_name()
     },
     
     # Check if the experiment name is provided in cell A2
-    has_experiment_name = function(experiment_name) {
+    # Must always check the experiment name in all experiments
+    check_experiment_name = function() {
       cell_value <- get_cell_value(self$df, "A2")
-      return(cell_value == experiment_name)
+
+      # if cell value is NA or contain only space characters
+      if (is.na(cell_value) || trimws(cell_value) == "") {
+        stop("The experiment name in cell A2 is not provided.")
+      }
+      
+      if (cell_value != EXPERIMENT_NAME) {
+        stop(paste0(
+          "The experiment name in cell A2 is not correct. ",
+          "The value should be '", EXPERIMENT_NAME, "'."))
+      }
     }
   )
 )
 
 # Define Experiment_6 class that inherits from Base_Experiment
 Experiment_6 <- R6Class(
-  "Child",
+  "Experiment_6",
   # Make it inherit from Base_Experiment class using the inherit property
   inherit = Base_Experiment,
   
@@ -124,11 +139,5 @@ Experiment_6 <- R6Class(
 # MAIN -------------------------------------------------------------------------
 # This is where the code run
 # Create an object of the Experiment_6 class using the new() function
-experiment_6 <- Experiment_6$new(INFILE)
-
-# Requirement 1.a: Check if the experiment has a matching name in cell A2; 
-# exit if no title is found or not matching the name.
-if (!experiment_6$has_experiment_name(EXPERIMENT_NAME)) {
-  stop("The experiment name in cell A2 is not correct or not provided.")
-}
+experiment <- Experiment_6$new(INFILE)
 
