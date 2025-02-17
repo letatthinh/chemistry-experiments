@@ -8,6 +8,7 @@ library(R6)      # Create classes in R
 library(readxl)  # Read excel files
 library(stringr) # Work with strings
 library(dplyr)   # Work with data
+library(ggplot2)   # Work with data
 
 
 
@@ -258,6 +259,34 @@ Experiment_6 <- R6Class(
         # Else, assign NA
         NA
       )
+    },
+
+    # G = E / MM_CaOx
+    create_KOx_and_CaOx_scatter_plot = function() {
+      # Extract column G and F into a new dataframe
+      extracted_df <- self$main_df[, c("G", "F")]
+      # Remove NAs
+      extracted_df <- na.omit(extracted_df)
+      # Multiply each column by 1000
+      extracted_df <- extracted_df * 1000
+      # Create scatter plot
+      ggplot(extracted_df,
+             aes(x = F,
+                 y = G)
+      ) +
+        geom_point(size = 5, alpha = 0.8) +
+        labs(
+          x = expression(K[2]*C[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
+          y = expression(CaC[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
+        ) +
+        theme_classic() +
+        theme(
+          panel.grid.major = element_line(
+            color = "#e2e8f0",
+            size = 0.5,
+            linetype = 1
+          )
+        )
     }
   )
 )
@@ -284,5 +313,7 @@ experiment$calculate_chemical_compound_created_mass()
 experiment$calculate_KOx_moles()
 # Requirement 2.c:
 experiment$calculate_CaOx_moles()
+# Requirement 2.d:
+experiment$create_KOx_and_CaOx_scatter_plot()
 
-# print(experiment$main_df)
+#print(experiment$main_df)
