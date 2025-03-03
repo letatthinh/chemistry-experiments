@@ -19,9 +19,9 @@ INFILE <- "expt06.xlsx"
 # Should match value in cell A2
 EXPERIMENT_NAME <- "Experiment 6:  Limiting Reactants"
 # Start row index of main experiment data in the excel sheet
-MAIN_DF_START_INDEX <- 9
+MAIN_DF_START_ROW_INDEX <- 9
 # End row index of main experiment data in the excel sheet
-MAIN_DF_END_INDEX <- 32
+MAIN_DF_END_ROW_INDEX <- 32
 
 
 
@@ -74,13 +74,13 @@ get_cell_value <- function(df, cell_name) {
   # Convert column letters to numeric index
   column_index <- get_column_index(column_name)
   
-  # Return the simplified cell value with drop = TRUE
+  # Return the simplified cell value (a string or a number) with drop = TRUE
   return(df[row_index, column_index, drop = TRUE])
 }
 
 # Convert columns from character type to numeric type
 # column_indices is a vector of column names, e.g. c(1, 3)
-convert_columns_to_numerics <- function(df, column_indices = NULL) {
+convert_column_type_to_numeric <- function(df, column_indices = NULL) {
   # If column_indices is NULL: covert all columns to numeric
   if (is.null(column_indices)) {
     df[] <- lapply(df, as.numeric)
@@ -143,9 +143,11 @@ Base_Experiment <- R6Class(
     },
 
     # Get the main df by row indices
-    get_main_df = function(start_row, end_row) {
+    get_main_df = function(start_row_index, end_row_index) {
       # Select main data from sheet data and convert it to data frame
-      self$main_df <- as.data.frame(self$sheet_df[start_row:end_row, ])
+      self$main_df <- as.data.frame(
+        self$sheet_df[start_row_index:end_row_index, ]
+      )
       # Set the first column as row names
       rownames(self$main_df) <- self$main_df[[1]]
       # Remove the first column from the main df
@@ -179,6 +181,11 @@ Experiment_6 <- R6Class(
     MM_KOx = 184.23,
     # Molar mass of CaOx?
     MM_CaOx = 146.11,
+    # Default value of the expected KOx moles
+    default_expected_KOx_moles = 1.125e-3,
+    # A vector of expected KOx moles by picking the smaller one between F and 
+    # default value of the expected KOx moles
+    expected_KOx_moles = NULL,
 
     # Constructor - Read excel file
     initialize = function(file_path) {
@@ -193,7 +200,7 @@ Experiment_6 <- R6Class(
       # Rename columns
       names(self$main_df) <- c("B", "C", "D", "E", "F", "G")
       # Convert string data to numeric data
-      self$main_df <- convert_columns_to_numerics(self$main_df)
+      self$main_df <- convert_column_type_to_numeric(self$main_df)
     },
 
     # Check for missing data
@@ -226,7 +233,7 @@ Experiment_6 <- R6Class(
     },
 
     # E = D - C
-    calculate_chemical_compound_created_mass = function() {
+    calculate_produced_chemical_compound_mass = function() {
       self$main_df$E <- ifelse(
         # If columns C and D passed the validation
         self$chk_crucible & self$chk_ppt,
@@ -248,6 +255,19 @@ Experiment_6 <- R6Class(
         NA
       )
     },
+    
+    # Set expected KOx moles? (the smaller one between F and 1.125e-3)
+    # Note: not sure if this is the expected F or G
+    set_expected_KOx_moles = function() {
+      self$expected_KOx_moles <- ifelse(
+        # If column F is not NA
+        !is.na(self$main_df$F),
+        # Pick the smaller value between F and 1.125e-3
+        pmin(self$main_df$F, self$default_expected_KOx_moles),
+        # Else, assign NA
+        NA
+      )
+    },
 
     # G = E / MM_CaOx
     calculate_CaOx_moles = function() {
@@ -261,20 +281,33 @@ Experiment_6 <- R6Class(
       )
     },
 
-    # G = E / MM_CaOx
+    # Create scatter plot
     create_KOx_and_CaOx_scatter_plot = function() {
-      # Extract column G and F into a new dataframe
-      extracted_df <- self$main_df[, c("G", "F")]
+      # Extract column G and F into a new data frame 
+      extracted_F_and_G_df <- self$main_df[, c("F", "G")]
+      # Add red color for outliers, and green for valid data
+      extracted_F_and_G_df$color <- ifelse(
+        extracted_F_and_G_df$G < 0.8 * self$expected_KOx_moles | 
+        extracted_F_and_G_df$G > 1.2 * self$expected_KOx_moles,
+        "red", 
+        "green"
+      )
+      # Convert row names into labels in a new column
+      extracted_F_and_G_df$label <- rownames(extracted_F_and_G_df)
       # Remove NAs
-      extracted_df <- na.omit(extracted_df)
-      # Multiply each column by 1000
-      extracted_df <- extracted_df * 1000
+      cleaned_F_and_G_df <- na.omit(extracted_F_and_G_df)
+      # Multiply each of F and G columns by 1000
+      cleaned_F_and_G_df[, c("F", "G")] <- 
+        cleaned_F_and_G_df[, c("F", "G")] * 1000
       # Create scatter plot
-      ggplot(extracted_df,
+      ggplot(cleaned_F_and_G_df,
              aes(x = F,
-                 y = G)
+                 y = G,
+                 color = color)
       ) +
         geom_point(size = 5, alpha = 0.8) +
+        # Use colors directly from the data
+        scale_color_identity() +
         labs(
           x = expression(K[2]*C[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
           y = expression(CaC[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
@@ -283,7 +316,7 @@ Experiment_6 <- R6Class(
         theme(
           panel.grid.major = element_line(
             color = "#e2e8f0",
-            size = 0.5,
+            linewidth = 0.5,
             linetype = 1
           )
         )
@@ -299,7 +332,7 @@ Experiment_6 <- R6Class(
 # Requirement 1.a
 experiment <- Experiment_6$new(INFILE)
 # Requirement 1.b:
-experiment$get_main_df(MAIN_DF_START_INDEX, MAIN_DF_END_INDEX)
+experiment$get_main_df(MAIN_DF_START_ROW_INDEX, MAIN_DF_END_ROW_INDEX)
 experiment$check_missing_data()
 # Requirement 1.c:
 experiment$check_chemical_compound_mass()
@@ -308,12 +341,14 @@ experiment$check_crucible_mass()
 # Requirement 1.e:
 experiment$check_precipitate_mass()
 # Requirement 2.a:
-experiment$calculate_chemical_compound_created_mass()
+experiment$calculate_produced_chemical_compound_mass()
 # Requirement 2.b:
 experiment$calculate_KOx_moles()
+# Requirement 3.a:
+experiment$set_expected_KOx_moles()
 # Requirement 2.c:
 experiment$calculate_CaOx_moles()
-# Requirement 2.d:
+# Requirement 2.d + 3.a:
 experiment$create_KOx_and_CaOx_scatter_plot()
 
-#print(experiment$main_df)
+print(experiment$main_df)
