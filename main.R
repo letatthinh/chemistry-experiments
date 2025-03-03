@@ -284,21 +284,22 @@ Experiment_6 <- R6Class(
     # Create scatter plot
     create_KOx_and_CaOx_scatter_plot = function() {
       # Extract column G and F into a new data frame 
-      extracted_F_and_G_df <- self$main_df[, c("F", "G")]
+      F_and_G_df <- self$main_df[, c("F", "G")]
       # Add red color for outliers, and green for valid data
-      extracted_F_and_G_df$color <- ifelse(
-        extracted_F_and_G_df$G < 0.8 * self$expected_KOx_moles | 
-        extracted_F_and_G_df$G > 1.2 * self$expected_KOx_moles,
+      F_and_G_df$color <- ifelse(
+        F_and_G_df$G < 0.8 * self$expected_KOx_moles | 
+        F_and_G_df$G > 1.2 * self$expected_KOx_moles,
         "red", 
         "green"
       )
       # Convert row names into labels in a new column
-      extracted_F_and_G_df$label <- rownames(extracted_F_and_G_df)
+      F_and_G_df$label <- rownames(F_and_G_df)
       # Remove NAs
-      cleaned_F_and_G_df <- na.omit(extracted_F_and_G_df)
+      cleaned_F_and_G_df <- na.omit(F_and_G_df)
       # Multiply each of F and G columns by 1000
       cleaned_F_and_G_df[, c("F", "G")] <- 
         cleaned_F_and_G_df[, c("F", "G")] * 1000
+      
       # Create scatter plot
       ggplot(cleaned_F_and_G_df,
              aes(x = F,
@@ -306,6 +307,11 @@ Experiment_6 <- R6Class(
                  color = color)
       ) +
         geom_point(size = 5, alpha = 0.8) +
+        # Add labels
+        geom_text(aes(label = label), 
+                  color = "black",
+                  vjust = -1, 
+                  hjust = 0.5) +
         # Use colors directly from the data
         scale_color_identity() +
         labs(
