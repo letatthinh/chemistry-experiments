@@ -4,11 +4,29 @@
 
 
 # LOAD LIBRARIES ---------------------------------------------------------------
-library(R6)      # Create classes in R
-library(readxl)  # Read excel files
-library(stringr) # Work with strings
-library(dplyr)   # Work with data
-library(ggplot2)   # Work with data
+# Function to check and install a package if missing
+load_or_install_package <- function(package_name) {
+  # requireNamespace will check if the package is exist only, it doesn't load
+  # the package into memory
+  if (!requireNamespace(package_name)) {
+    install.packages(package_name)
+  }
+  
+  # Load the package after installation 
+  # character.only: package will be passed in by a string
+  library(package_name, character.only = TRUE)
+}
+
+# For working with OOP in R
+load_or_install_package("R6")
+# # For working with strings
+load_or_install_package("stringr")
+# # For working with data
+load_or_install_package("dplyr")
+# # For working with graphs
+load_or_install_package("ggplot2")
+# # For reading or writing data to excel file
+load_or_install_package("openxlsx2")
 
 
 
@@ -32,69 +50,79 @@ File_Extension <- list(xlsx="xlsx", csv="csv")
 
 
 
-# UTILITIES --------------------------------------------------------------------
+# UTILITY CLASSSES -------------------------------------------------------------
 # Note: Only functions that support you in doing something in multiple places go
 # here
-# Get the index of a column in the excel file by name
-get_column_index <- function(column_name) {
-  column_index <- 0
+Excel_Utility <- R6Class(
+  # Class name
+  "Excel_Utility",
   
-  # In R, index start from 1
-  for (index in 1:nchar(column_name)) {
-    # Extract character at index from column_name
-    character <- str_sub(column_name, index, index)
+  # Public properties and methods
+  public = list(
+    # Get value from a cell (e.g. A12)
+    get_cell_value = function(df, cell_name) {
+      # Extract column name (e.g. A)
+      column_name <- str_extract(cell_name, "[A-Z]+")
+      # Extract row index (e.g. 12)
+      row_index <- as.numeric(str_extract(cell_name, "[0-9]+"))
+      
+      if (is.na(column_name)) {
+        stop("Wrong cell format! Missing column name")
+      }
+      
+      if (is.na(row_index)) {
+        stop("Wrong cell format! Missing row index")
+      }
+      
+      # Convert column letters to numeric index
+      column_index <- private$get_column_index(column_name)
+      
+      # Return the simplified cell value (a string or a number) with drop = TRUE
+      return(df[row_index, column_index, drop = TRUE])
+    },
     
-    # Convert character to number
-    # Since the column index in excel start from 1, we plus 1
-    # ('A' = 1, 'B' = 2, ..., 'Z' = 26)
-    character_number <- utf8ToInt(character) - utf8ToInt("A") + 1
-    
-    # Calculate the index
-    column_index <- (column_index * 26) + character_number
-  }
-  
-  return(column_index)
-}
-
-# Get value from a cell (e.g. A12)
-get_cell_value <- function(df, cell_name) {
-  # Extract column name (e.g. A)
-  column_name <- str_extract(cell_name, "[A-Z]+")
-  # Extract row index (e.g. 12)
-  row_index <- as.numeric(str_extract(cell_name, "[0-9]+"))
-  
-  if (is.na(column_name)) {
-    stop("Wrong cell format! Missing column name")
-  }
-  
-  if (is.na(row_index)) {
-    stop("Wrong cell format! Missing row index")
-  }
-  
-  # Convert column letters to numeric index
-  column_index <- get_column_index(column_name)
-  
-  # Return the simplified cell value (a string or a number) with drop = TRUE
-  return(df[row_index, column_index, drop = TRUE])
-}
-
-# Convert columns from character type to numeric type
-# column_indices is a vector of column names, e.g. c(1, 3)
-convert_column_type_to_numeric <- function(df, column_indices = NULL) {
-  # If column_indices is NULL: covert all columns to numeric
-  if (is.null(column_indices)) {
-    df[] <- lapply(df, as.numeric)
-  } else {
-    # Else, only convert specified columns by indices
-    df[column_indices] <- lapply(df[column_indices], as.numeric)
-  }
-
-  return(df)
-}
+    # Convert columns from character type to numeric type
+    # column_indices is a vector of column names, e.g. c(1, 3)
+    convert_column_type_to_numeric = function(df, column_indices = NULL) {
+      # If column_indices is NULL: covert all columns to numeric
+      if (is.null(column_indices)) {
+        df[] <- lapply(df, as.numeric)
+      } else {
+        # Else, only convert specified columns by indices
+        df[column_indices] <- lapply(df[column_indices], as.numeric)
+      }
+      
+      return(df)
+    }
+  ),
+  private = list(
+    # Get the main df by row indices
+    get_column_index = function(column_name) {
+      # Set default column index = 0
+      column_index <- 0
+      
+      # In R, index start from 1
+      for (index in 1:nchar(column_name)) {
+        # Extract character at index from column_name
+        character <- str_sub(column_name, index, index)
+        
+        # Convert character to number
+        # Since the column index in excel start from 1, we plus 1
+        # ('A' = 1, 'B' = 2, ..., 'Z' = 26)
+        character_number <- utf8ToInt(character) - utf8ToInt("A") + 1
+        
+        # Calculate the index
+        column_index <- (column_index * 26) + character_number
+      }
+      
+      return(column_index)
+    }
+  )
+)
 
 
 
-# CLASSES ----------------------------------------------------------------------
+# EXPERIMENT CLASSES -----------------------------------------------------------
 # Define a base experiment class (parent class)
 # Other experiment classes should inherit from this one
 Base_Experiment <- R6Class(
@@ -107,16 +135,18 @@ Base_Experiment <- R6Class(
     sheet_df = NULL,
     # Main data
     main_df = NULL,
+    # Excel utility
+    excel_utility = Excel_Utility$new(),
 
     # Constructor - Read excel file as default
     initialize = function(
       # Input file path
       file_path,
       # TRUE to use the first row as column names
-      col_names = FALSE
+      has_column_names = FALSE
     ) {
-      # 'self' keyword helps reference to class properties [and methods ?]
-      self$sheet_df <- read_excel(file_path, col_names=col_names)
+      # 'self' keyword helps reference to class properties and methods
+      self$sheet_df <- read_excel(file_path, col_names=has_column_names)
 
       # Requirement 1.a: Check if the experiment has a matching name in cell A2;
       # exit if no title is found or not matching the name
@@ -126,7 +156,7 @@ Base_Experiment <- R6Class(
     # Check if the experiment name is provided in cell A2
     # Must always check the experiment name in all experiments
     check_experiment_name = function() {
-      cell_value <- get_cell_value(self$sheet_df, "A2")
+      cell_value <- self$excel_utility$get_cell_value(self$sheet_df, "A2")
 
       # Stop if experiment name in cell A2 is NA or contain only space
       # characters
@@ -200,7 +230,9 @@ Experiment_6 <- R6Class(
       # Rename columns
       names(self$main_df) <- c("B", "C", "D", "E", "F", "G")
       # Convert string data to numeric data
-      self$main_df <- convert_column_type_to_numeric(self$main_df)
+      self$main_df <- self$excel_utility$convert_column_type_to_numeric(
+        self$main_df
+      )
     },
 
     # Check for missing data
@@ -356,5 +388,9 @@ experiment$set_expected_KOx_moles()
 experiment$calculate_CaOx_moles()
 # Requirement 2.d + 3.a:
 experiment$create_KOx_and_CaOx_scatter_plot()
+
+# Requirement 4.a:
+# Load the excel file
+# wb <- loadWorkbook(INFILE)
 
 print(experiment$main_df)
