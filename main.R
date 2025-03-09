@@ -75,7 +75,7 @@ Excel_Utility <- R6Class(
       }
       
       # Convert column letters to numeric index
-      column_index <- private$get_column_index(column_name)
+      column_index <- self$get_column_index(column_name)
       
       # Return the simplified cell value (a string or a number) with drop = TRUE
       return(df[row_index, column_index, drop = TRUE])
@@ -89,13 +89,12 @@ Excel_Utility <- R6Class(
         df[] <- lapply(df, as.numeric)
       } else {
         # Else, only convert specified columns by indices
-        df[column_indices] <- lapply(df[column_indices], as.numeric)
+        df[, column_indices] <- lapply(df[column_indices], as.numeric)
       }
       
       return(df)
-    }
-  ),
-  private = list(
+    },
+    
     # Get the main df by row indices
     get_column_index = function(column_name) {
       # Set default column index = 0
@@ -178,10 +177,6 @@ Base_Experiment <- R6Class(
       self$main_df <- as.data.frame(
         self$sheet_df[start_row_index:end_row_index, ]
       )
-      # Set the first column as row names
-      rownames(self$main_df) <- self$main_df[[1]]
-      # Remove the first column from the main df
-      self$main_df <- self$main_df[, -1]
     }
   )
 )
@@ -227,11 +222,16 @@ Experiment_6 <- R6Class(
     get_main_df = function(start_row, end_row) {
       # Call the get_main_df() function from parent
       super$get_main_df(start_row, end_row)
-      # Rename columns
-      names(self$main_df) <- c("B", "C", "D", "E", "F", "G")
-      # Convert string data to numeric data
+      # Rename columns (from A to G)
+      names(self$main_df) <- LETTERS[
+        which(LETTERS == "A"):which(LETTERS == "G")
+      ]
+      # Convert string data to numeric data from column B to column G
       self$main_df <- self$excel_utility$convert_column_type_to_numeric(
-        self$main_df
+        self$main_df,
+        # Define column index range
+        self$excel_utility$get_column_index("B"):
+          self$excel_utility$get_column_index("G")
       )
     },
 
