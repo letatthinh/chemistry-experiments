@@ -19,12 +19,16 @@ load_or_install_package <- function(package_name) {
 
 # For working with OOP in R
 load_or_install_package("R6")
+
 # For working with strings
 load_or_install_package("stringr")
+
 # For working with data
 load_or_install_package("dplyr")
+
 # For working with graphs
 load_or_install_package("ggplot2")
+
 # For reading or writing data to excel file
 load_or_install_package("openxlsx2")
 
@@ -34,12 +38,16 @@ load_or_install_package("openxlsx2")
 # Note: Only general settings go here
 # File name
 INFILE <- "expt06.xlsx"
+
 # Main sheet name
 MAIN_SHEET_NAME <- "class data"
+
 # Should match value in cell A2
 EXPERIMENT_NAME <- "Experiment 6:  Limiting Reactants"
+
 # Start row index of main experiment data in the excel sheet
 MAIN_DF_START_ROW_INDEX <- 9
+
 # End row index of main experiment data in the excel sheet
 MAIN_DF_END_ROW_INDEX <- 32
 
@@ -65,6 +73,7 @@ Excel_Utility <- R6Class(
     get_cell_value = function(df, cell_name) {
       # Extract column name (e.g. A)
       column_name <- str_extract(cell_name, "[A-Z]+")
+      
       # Extract row index (e.g. 12)
       row_index <- as.numeric(str_extract(cell_name, "[0-9]+"))
       
@@ -134,10 +143,15 @@ Base_Experiment <- R6Class(
   public = list(
     # Sheet data
     sheet_df = NULL,
+    
     # Main data
     main_df = NULL,
+    
     # Excel utility
     excel_utility = Excel_Utility$new(),
+    
+    # Plot variable
+    plot = NULL,
 
     # Constructor - Read excel file as default
     initialize = function(
@@ -186,10 +200,11 @@ Base_Experiment <- R6Class(
       file_path, 
       main_sheet_name, 
       new_sheet_name,
-      main_df_start_row_index,
-      main_df_start_column_index = 1,
+      df,
+      df_start_row_index,
+      df_start_column_index = 1,
       # Avoid writing column names of new_main_df
-      should_write_main_df_column_names = FALSE
+      should_write_df_column_names = FALSE
     ) {
       # Create workbook object
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_load.html?q=wb_load#null
@@ -207,18 +222,14 @@ Base_Experiment <- R6Class(
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_clone_worksheet.html
       workbook$clone_worksheet(main_sheet_name, new = new_sheet_name)
       
-      # Create a copy of main_df and replace NA values with blanks
-      new_main_df <- data.frame(self$main_df)
-      new_main_df[is.na(new_main_df)] <- ""
-      
       # Write new_main_df
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_add_data.html
       workbook$add_data(
         new_sheet_name, 
-        new_main_df,
-        start_row = main_df_start_row_index,
-        start_col = main_df_start_column_index,
-        col_names = should_write_main_df_column_names)
+        df,
+        start_row = df_start_row_index,
+        start_col = df_start_column_index,
+        col_names = should_write_df_column_names)
       
       # Save the workbook (overwrite the existing file)
       workbook$save(file_path, overwrite=TRUE)
@@ -236,23 +247,32 @@ Experiment_6 <- R6Class(
   public = list(
     # Boolean vector for checking missing values in column B
     chkB = NULL,
+    
     # Boolean vector for checking chemical compound mass values in
     # column B
     chk_mass = NULL,
+    
     # Boolean vector for checking missing values in column C
     chkC = NULL,
+    
     # Boolean vector for checking crucible mass values in column C
     chk_crucible = NULL,
+    
     # Boolean vector for checking missing values in column D
     chkD = NULL,
+    
     # Boolean vector for checking ppt (precipitate ?) values in column D
     chk_ppt = NULL,
+    
     # Molar mass of KOx?
     MM_KOx = 184.23,
+    
     # Molar mass of CaOx?
     MM_CaOx = 146.11,
+    
     # Default value of the expected KOx moles
     default_expected_KOx_moles = 1.125e-3,
+    
     # A vector of expected KOx moles by picking the smaller one between F and 
     # default value of the expected KOx moles
     expected_KOx_moles = NULL,
@@ -267,10 +287,12 @@ Experiment_6 <- R6Class(
     get_main_df = function(start_row, end_row) {
       # Call the get_main_df() function from parent
       super$get_main_df(start_row, end_row)
+      
       # Rename columns (from A to G)
       names(self$main_df) <- LETTERS[
         which(LETTERS == "A"):which(LETTERS == "G")
       ]
+      
       # Convert string data to numeric data from column B to column G
       self$main_df <- self$excel_utility$convert_column_type_to_numeric(
         self$main_df,
@@ -376,7 +398,7 @@ Experiment_6 <- R6Class(
         cleaned_extracted_df[, c("F", "G")] * 1000
       
       # Create scatter plot
-      plot <- ggplot(cleaned_extracted_df,
+      self$plot <- ggplot(cleaned_extracted_df,
              aes(x = F,
                  y = G,
                  color = color)
@@ -403,13 +425,37 @@ Experiment_6 <- R6Class(
           )
         )
       
-      plot
-      
-      # Save the graph as my desktop size
+      self$plot
+    },
+    
+    # Write plot to pdf
+    write_plot_result = function() {
       ggsave("limiting_reactants.pdf", 
-             plot = plot, 
+             plot = self$plot, 
              width = 12, 
              height = 8)
+    },
+    
+    # Clean maindf - create data_result_df
+    create_data_result_df = function() {
+      # Create a copy of main_df and 
+      new_main_df <- data.frame(self$main_df)
+      
+      # Round float values to 9 decimal numbers from column E to G
+      start_column <- self$excel_utility$get_column_index("E")
+      end_column <- self$excel_utility$get_column_index("G")
+      
+      new_main_df <- new_main_df %>%
+        mutate(across(
+          start_column:end_column, 
+          ~ ifelse(is.na(.x), 
+                   NA, 
+                   round(.x, 9))))
+      
+      # Replace NA values in new_main_df with blanks
+      new_main_df[is.na(new_main_df)] <- ""
+      
+      return(new_main_df)
     }
   )
 )
@@ -441,10 +487,14 @@ experiment$calculate_CaOx_moles()
 # Requirement 2.d + 3.a:
 experiment$create_KOx_and_CaOx_scatter_plot()
 # Requirement 4.a:
+data_result_df <- experiment$create_data_result_df()
 experiment$write_result(
   INFILE,
   main_sheet_name = MAIN_SHEET_NAME,
   new_sheet_name = "complete",
+  data_result_df,
   MAIN_DF_START_ROW_INDEX)
+# Requirement 4.b:
+experiment$write_plot_result()
 
 print(experiment$main_df)
