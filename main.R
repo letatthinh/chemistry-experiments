@@ -369,7 +369,7 @@ Experiment_6 <- R6Class(
         cleaned_extracted_df[, c("F", "G")] * 1000
       
       # Create scatter plot
-      ggplot(cleaned_extracted_df,
+      plot <- ggplot(cleaned_extracted_df,
              aes(x = F,
                  y = G,
                  color = color)
@@ -385,6 +385,7 @@ Experiment_6 <- R6Class(
         labs(
           x = expression(K[2]*C[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
           y = expression(CaC[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
+          title = "Result"
         ) +
         theme_classic() +
         theme(
@@ -394,6 +395,15 @@ Experiment_6 <- R6Class(
             linetype = 1
           )
         )
+      
+      plot
+      
+      # Save the graph as my desktop size
+      ggsave("limiting_reactants.pdf", 
+             plot = plot, 
+             width = 1920, 
+             height = 1080, 
+             units = "px")
     }
   )
 )
@@ -424,7 +434,6 @@ experiment$set_expected_KOx_moles()
 experiment$calculate_CaOx_moles()
 # Requirement 2.d + 3.a:
 experiment$create_KOx_and_CaOx_scatter_plot()
-
 # Requirement 4.a:
 experiment$write_result(
   INFILE,
