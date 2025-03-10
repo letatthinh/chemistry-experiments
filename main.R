@@ -147,7 +147,7 @@ Base_Experiment <- R6Class(
       has_column_names = FALSE
     ) {
       # 'self' keyword helps reference to class properties and methods
-      self$sheet_df <- read_excel(file_path, col_names=has_column_names)
+      self$sheet_df <- read_xlsx(file_path, col_names=has_column_names)
 
       # Requirement 1.a: Check if the experiment has a matching name in cell A2;
       # exit if no title is found or not matching the name
@@ -182,7 +182,15 @@ Base_Experiment <- R6Class(
     },
     
     # Write result to a new sheet
-    write_result = function(file_path, main_sheet_name, new_sheet_name) {
+    write_result = function(
+      file_path, 
+      main_sheet_name, 
+      new_sheet_name,
+      main_df_start_row_index,
+      main_df_start_column_index = 1,
+      # Avoid writing column names of new_main_df
+      should_write_main_df_column_names = FALSE
+    ) {
       # Create workbook object
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_load.html?q=wb_load#null
       workbook <- wb_load(file_path)
@@ -208,10 +216,9 @@ Base_Experiment <- R6Class(
       workbook$add_data(
         new_sheet_name, 
         new_main_df,
-        start_row = MAIN_DF_START_ROW_INDEX,
-        start_col = 1,
-        # Avoid writing column names
-        col_names = FALSE)
+        start_row = main_df_start_row_index,
+        start_col = main_df_start_column_index,
+        col_names = should_write_main_df_column_names)
       
       # Save the workbook (overwrite the existing file)
       workbook$save(file_path, overwrite=TRUE)
@@ -437,6 +444,7 @@ experiment$create_KOx_and_CaOx_scatter_plot()
 experiment$write_result(
   INFILE,
   main_sheet_name = MAIN_SHEET_NAME,
-  new_sheet_name = "complete")
+  new_sheet_name = "complete",
+  MAIN_DF_START_ROW_INDEX)
 
 print(experiment$main_df)
