@@ -401,9 +401,8 @@ Experiment_6 <- R6Class(
       # Save the graph as my desktop size
       ggsave("limiting_reactants.pdf", 
              plot = plot, 
-             width = 1920, 
-             height = 1080, 
-             units = "px")
+             width = 12, 
+             height = 8)
     }
   )
 )
