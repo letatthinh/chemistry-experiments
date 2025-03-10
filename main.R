@@ -19,13 +19,13 @@ load_or_install_package <- function(package_name) {
 
 # For working with OOP in R
 load_or_install_package("R6")
-# # For working with strings
+# For working with strings
 load_or_install_package("stringr")
-# # For working with data
+# For working with data
 load_or_install_package("dplyr")
-# # For working with graphs
+# For working with graphs
 load_or_install_package("ggplot2")
-# # For reading or writing data to excel file
+# For reading or writing data to excel file
 load_or_install_package("openxlsx2")
 
 
@@ -34,6 +34,8 @@ load_or_install_package("openxlsx2")
 # Note: Only general settings go here
 # File name
 INFILE <- "expt06.xlsx"
+# Main sheet name
+MAIN_SHEET_NAME <- "class data"
 # Should match value in cell A2
 EXPERIMENT_NAME <- "Experiment 6:  Limiting Reactants"
 # Start row index of main experiment data in the excel sheet
@@ -177,6 +179,42 @@ Base_Experiment <- R6Class(
       self$main_df <- as.data.frame(
         self$sheet_df[start_row_index:end_row_index, ]
       )
+    },
+    
+    # Write result to a new sheet
+    write_result = function(file_path, main_sheet_name, new_sheet_name) {
+      # Create workbook object
+      # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_load.html?q=wb_load#null
+      workbook <- wb_load(file_path)
+      
+      # Remove if the new_sheet_name already exists
+      if (new_sheet_name %in% workbook$get_sheet_names()) {
+        workbook <- wb_remove_worksheet(workbook, new_sheet_name)
+      }
+      
+      # Clone the main_sheet_name to new_sheet_name
+      # Note: References to sheet names in formulas, charts, pivot tables, etc. 
+      # may not be updated. Some elements like named ranges and slicers cannot 
+      # be cloned yet.
+      # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_clone_worksheet.html
+      workbook$clone_worksheet(main_sheet_name, new = new_sheet_name)
+      
+      # Create a copy of main_df and replace NA values with blanks
+      new_main_df <- data.frame(self$main_df)
+      new_main_df[is.na(new_main_df)] <- ""
+      
+      # Write new_main_df
+      # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_add_data.html
+      workbook$add_data(
+        new_sheet_name, 
+        new_main_df,
+        start_row = MAIN_DF_START_ROW_INDEX,
+        start_col = 1,
+        # Avoid writing column names
+        col_names = FALSE)
+      
+      # Save the workbook (overwrite the existing file)
+      workbook$save(file_path, overwrite=TRUE)
     }
   )
 )
@@ -388,7 +426,9 @@ experiment$calculate_CaOx_moles()
 experiment$create_KOx_and_CaOx_scatter_plot()
 
 # Requirement 4.a:
-# Load the excel file
-# wb <- loadWorkbook(INFILE)
+experiment$write_result(
+  INFILE,
+  main_sheet_name = MAIN_SHEET_NAME,
+  new_sheet_name = "complete")
 
 print(experiment$main_df)
