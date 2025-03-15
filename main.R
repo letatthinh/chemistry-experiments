@@ -4,7 +4,7 @@
 
 # LOAD SOURCES -----------------------------------------------------------------
 # Must always load library.R first and be careful with the order of other source
-# files
+# files.
 source("utilities/library.R")
 source("utilities/excel.R")
 source("experiments/base.R")
