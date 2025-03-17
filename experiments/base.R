@@ -30,6 +30,12 @@ Base_Experiment <- R6Class(
     # has_column_names: indicate if the first row has column names
       has_column_names = FALSE
     ) {
+      # Stop if experiment name is not defined
+      if (is.null(self$infile)) {
+        stop(paste("The infile variable is not defined in child experiment", 
+                   "class."))
+      }
+      
       # 'self' keyword helps reference to class properties and methods
       self$sheet_df <- read_xlsx(self$infile, col_names=has_column_names)
       
@@ -56,9 +62,8 @@ Base_Experiment <- R6Class(
       
       # Stop if experiment name in cell A2 is not correct
       if (cell_value != self$experiment_name) {
-        stop(paste(
-          "The experiment name in cell A2 is not correct. ",
-          "The value should be '", self$experiment_name, "'."))
+        stop(paste0("The experiment name in cell A2 is not correct. ",
+                   "The value should be '", self$experiment_name, "'."))
       }
     },
     
@@ -72,8 +77,7 @@ Base_Experiment <- R6Class(
       }
       
       # Select main data from sheet data and convert it to data frame
-      self$main_df <- as.data.frame(
-        self$sheet_df[
+      self$main_df <- as.data.frame(self$sheet_df[
           self$main_df_start_row_index:self$main_df_end_row_index, 
         ]
       )
@@ -81,10 +85,10 @@ Base_Experiment <- R6Class(
     
     # Write result to a new sheet
     write_result = function(
-    new_sheet_name,
-    df,
-    df_start_row_index,
-    df_start_column_index = 1
+      new_sheet_name,
+      df,
+      df_start_row_index,
+      df_start_column_index = 1
     ) {
       # Stop main sheet name is not defined
       if (is.null(self$main_sheet_name)) {
@@ -110,13 +114,12 @@ Base_Experiment <- R6Class(
       
       # Write new_main_df
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_add_data.html
-      workbook$add_data(
-        new_sheet_name, 
-        df,
-        start_row = df_start_row_index,
-        start_col = df_start_column_index,
-        # Avoid writing column names of new_main_df
-        col_names = FALSE)
+      workbook$add_data(new_sheet_name,
+                        df,
+                        start_row = df_start_row_index,
+                        start_col = df_start_column_index,
+                        # Avoid writing column names of new_main_df
+                        col_names = FALSE)
       
       # Save the workbook (overwrite the existing file)
       workbook$save(self$infile, overwrite=TRUE)

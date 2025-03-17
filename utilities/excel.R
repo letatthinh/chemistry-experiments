@@ -36,6 +36,7 @@ Excel_Utility <- R6Class(
         df[] <- lapply(df, as.numeric)
       } else {
         # Else, only convert specified columns by indices
+        # NAs will be introduced if the data are not numeric.
         df[, column_indices] <- lapply(df[column_indices], as.numeric)
       }
       
