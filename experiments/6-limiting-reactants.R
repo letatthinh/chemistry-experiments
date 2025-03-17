@@ -327,6 +327,9 @@ Experiment_6 <- R6Class(
       private$write_invalid_amount_created(
         self$chk_amount_created, file_connection
       )
+      
+      # Remove empty lines at the bottom
+      private$remove_empty_lines_in_report(file_path)
     }
   ),
   private = list(
@@ -408,10 +411,7 @@ Experiment_6 <- R6Class(
     
     # Write to the report the stations having invalid amount of the compound 
     # created
-    write_invalid_amount_created = function(
-      check_vector,
-      file_connection
-    ) {
+    write_invalid_amount_created = function(check_vector, file_connection) {
       # Collect stations with incalculable precipitate
       # Note: Station names are in column A
       invalid_amount_created_stations <- self$main_df$A[
@@ -425,6 +425,20 @@ Experiment_6 <- R6Class(
         
         private$write_stations(invalid_amount_created_stations, 
                                file_connection)
+      }
+    },
+    
+    # Write to the report the stations having invalid amount of the compound 
+    # created
+    remove_empty_lines_in_report = function(file_path) {
+      lines <- readLines(file_path, warn = FALSE)
+      
+      if (length(lines) > 0) {
+        # Get from the first line till the last line with text
+        trimmed_lines <- lines[1:max(which(lines != ""))]
+        
+        # Write back to the file
+        writeLines(trimmed_lines, file_path)
       }
     }
   )
