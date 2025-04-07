@@ -26,9 +26,6 @@ Experiment_6 <- R6Class(
     # mass in column D
     chk_ppt = NULL,
     
-    # Boolean vector for checking incalculable precipitate mass in column E
-    chk_calculable_ppt = NULL,
-    
     # Boolean vector for checking valid amount of the compound created in 
     # column G
     chk_amount_created = NULL,
@@ -47,25 +44,21 @@ Experiment_6 <- R6Class(
     expected_KOx_moles = NULL,
     
     # Constructor - Read excel file
-    initialize = function() {
+    initialize = function(infile, main_sheet_name, experiment_name) {
       # Set infile
-      self$infile <- "expt06.xlsx"
+      self$infile <- infile
       # Set main_sheet_name
-      self$main_sheet_name <- "class data"
+      self$main_sheet_name <- main_sheet_name
       # Set experiment_name
-      self$experiment_name <- "Experiment 6:  Limiting Reactants"
-      # Set main_df_start_row_index
-      self$main_df_start_row_index <- 9
-      # Set main_df_end_row_index
-      self$main_df_end_row_index <- 32
+      self$experiment_name <- experiment_name
       # Call parent's constructor
       super$initialize()
     },
     
     # Override the get main df in parent
-    get_main_df = function() {
+    extract_main_df = function(start_row_index, end_row_index) {
       # Call the get_main_df() function in parent
-      super$get_main_df()
+      super$extract_main_df(start_row_index, end_row_index)
       
       # Rename columns (from A to G)
       names(self$main_df) <- LETTERS[
@@ -73,20 +66,13 @@ Experiment_6 <- R6Class(
       ]
       
       # Convert string data to numeric data from column B to column G
-      self$main_df <- self$excel_utility$convert_column_type_to_numeric(
-        self$main_df,
-        # Define column index range
-        self$excel_utility$get_column_index("B"):
-          self$excel_utility$get_column_index("G")
-      )
-    },
-    
-    # Check for missing data in columns B, C and D
-    # Condition is False if data is missing and True otherwise
-    check_missing_data = function() {
-      self$chkB <- !is.na(self$main_df$B)
-      self$chkC <- !is.na(self$main_df$C)
-      self$chkD <- !is.na(self$main_df$D)
+      # Note: Column index in main_df is similar to column index in Excel
+      start_column_index <- self$excel_utility$get_column_index("B")
+      end_column_index <- self$excel_utility$get_column_index("G")
+      
+      self$main_df[, start_column_index:end_column_index] <- lapply(
+        self$main_df[start_column_index:end_column_index], 
+        as.numeric)
     },
     
     # Check chemical compound mass data (column B)
@@ -97,7 +83,7 @@ Experiment_6 <- R6Class(
     check_chemical_compound_mass = function() {
       self$chk_mass <- ifelse(
         self$chkB,
-        !(self$main_df$B < 0 | 
+        !(self$check_negative(self$main_df$B) | 
           self$main_df$B < 0.080 | 
           self$main_df$B > 0.340),
         # Note: NA indicates missing chemical compound mass data
@@ -112,12 +98,13 @@ Experiment_6 <- R6Class(
     check_crucible_mass = function() {
       self$chk_crucible <- ifelse(
         self$chkC,
-        !(self$main_df$C < 0),
+        !(self$check_negative(self$main_df$C)),
         NA
       )
     },
     
-    # Check total mass of the crucible and the precipitate mass data (column D)
+    # Check total mass of the crucible and the chemical compound created mass 
+    # data (column D)
     # Notes:
     #   - NA when chkD is FALSE.
     #   - FALSE when chkD is TRUE and precipitate mass data (D) is negative or 
@@ -126,30 +113,18 @@ Experiment_6 <- R6Class(
       # If chkD is TRUE and chkC is TRUE
       self$chk_ppt <- ifelse(self$chkD & self$chkC,
         # FALSE when D is negative or D < C
-        ifelse(self$main_df$D < 0 | self$main_df$D < self$main_df$C, 
+        ifelse(self$check_negative(self$main_df$D) | 
+               self$main_df$D < self$main_df$C, 
           FALSE, 
           TRUE),
         # If chkD is TRUE and chkC is FALSE
         ifelse(self$chkD & !self$chkC,
           # FALSE when D is negative
-          ifelse(self$main_df$D < 0, 
+          ifelse(self$check_negative(self$main_df$D), 
             FALSE, 
             TRUE),
           # If chkD is FALSE, assign NA
           NA)
-      )
-    },
-    
-    # Check incalculable precipitate mass (column E)
-    # Notes:
-    #   - NA when chk_crucible and chk_ppt are both NA.
-    #   - FALSE when chk_crucible and chk_ppt are both TRUE
-    check_calculable_precipitate_mass = function() {
-      self$chk_calculable_ppt <- ifelse(
-        (self$chk_crucible == FALSE | self$chk_ppt == FALSE) | 
-        (xor(is.na(self$chk_crucible), is.na(self$chk_ppt))),
-        FALSE, 
-        TRUE
       )
     },
     
@@ -226,7 +201,7 @@ Experiment_6 <- R6Class(
       # Add red color for outliers, and green for valid data
       extracted_df$color <- ifelse(
         self$chk_amount_created,
-        "green", 
+        "black",
         "red"
       )
       
@@ -239,23 +214,32 @@ Experiment_6 <- R6Class(
       
       # Create scatter plot
       self$plot <- ggplot(cleaned_extracted_df,
-                          aes(x = F,
-                              y = G,
-                              color = color)
-      ) +
+                          aes(x = F, y = G, color = color)) +
         geom_point(size = 5, alpha = 0.8) +
         # Add labels
-        geom_text(aes(label = A), color = "black", vjust = -1, hjust = 0.5) +
+        geom_text_repel(aes(label = A),
+                  size = self$default_plot_font_size,
+                  color = "black", 
+                  vjust = -1.5, 
+                  hjust = 0.5) +
+        # Allow labels to overflow
+        coord_cartesian(clip = "off") +
         # Use colors directly from the data
         scale_color_identity() +
+        # Increase y axis to add some space near the top
+        scale_y_continuous(limits = c(min(cleaned_extracted_df$G), 
+                                      max(cleaned_extracted_df$G) + 0.05)) + 
         labs(x = expression(K[2]*C[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
-             y = expression(CaC[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol),
-             title = "Result"
+             y = expression(CaC[2]*O[4] ~ "\u00b7" ~ H[2]*O/mmol)
         ) +
         theme_classic() +
-        theme(panel.grid.major = element_line(color = "#e2e8f0", 
-                                              linewidth = 0.5,
-                                              linetype = 1))
+        theme(axis.text = element_text(size = self$conversion_utility$mm_to_pt(
+                  self$default_plot_font_size)),
+              axis.title = element_text(size = self$conversion_utility$mm_to_pt(
+                self$default_plot_font_size + 1.5)),
+              plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+              axis.title.x = element_text(margin = margin(t = 10)),
+              axis.title.y = element_text(margin = margin(r = 10)))
       
       self$plot
     },
@@ -318,9 +302,22 @@ Experiment_6 <- R6Class(
       
       # Report stations with mass of precipitate could not be calculated in 
       # column E
-      private$write_incalculable_precipitate_mass_stations(
-        self$chk_calculable_ppt, file_connection
+      # Check calculable ppt
+      # Notes:
+      #   - NA when chk_crucible and chk_ppt are both NA
+      #   - FALSE when either chk_crucible or chk_ppt is FALSE,
+      #   - TRUE when chk_crucible and chk_ppt are both TRUE
+      chk_calculable_ppt <- ifelse(
+        (self$chk_crucible == FALSE | self$chk_ppt == FALSE) | 
+          (xor(is.na(self$chk_crucible), is.na(self$chk_ppt))),
+        FALSE, 
+        TRUE
       )
+      
+      private$write_incalculable_precipitate_mass_stations(
+        chk_calculable_ppt, file_connection
+      )
+      
       cat("\n\n", file = file_connection)
       
       # Report stations that are outliers in column G

@@ -16,14 +16,14 @@ Base_Experiment <- R6Class(
     sheet_df = NULL,
     # Main experiment data
     main_df = NULL,
-    # Start row index of main experiment data in the excel sheet
-    main_df_start_row_index = NULL,
-    # End row index of main experiment data in the excel sheet
-    main_df_end_row_index = NULL,
     # Excel utility
     excel_utility = Excel_Utility$new(),
+    # Conversion utility
+    conversion_utility = Conversion_Utility$new(),
     # Plot variable
     plot = NULL,
+    # Plot default font size (in mm)
+    default_plot_font_size = 5,
     
     # Constructor - Read excel file as default
     initialize = function(
@@ -39,14 +39,13 @@ Base_Experiment <- R6Class(
       # 'self' keyword helps reference to class properties and methods
       self$sheet_df <- read_xlsx(self$infile, col_names=has_column_names)
       
-      # Requirement 1.a: Check if the experiment has a matching name in cell A2;
-      # exit if no title is found or not matching the name
+      # Check if the experiment has a matching name in cell A2
       self$check_experiment_name()
     },
     
     # Check if the experiment name is provided in cell A2
     check_experiment_name = function() {
-      cell_value <- self$excel_utility$get_cell_value(self$sheet_df, "A2")
+      cell_a2_value <- self$excel_utility$get_cell_value(self$sheet_df, "A2")
       
       # Stop if experiment name is not defined
       if (is.null(self$experiment_name)) {
@@ -56,31 +55,41 @@ Base_Experiment <- R6Class(
       
       # Stop if experiment name in cell A2 is NA or contain only space
       # characters
-      if (is.na(cell_value) || trimws(cell_value) == "") {
+      if (is.na(cell_a2_value) || trimws(cell_a2_value) == "") {
         stop("The experiment name in cell A2 is not provided.")
       }
       
       # Stop if experiment name in cell A2 is not correct
-      if (cell_value != self$experiment_name) {
+      if (cell_a2_value != self$experiment_name) {
         stop(paste0("The experiment name in cell A2 is not correct. ",
                    "The value should be '", self$experiment_name, "'."))
       }
     },
     
     # Get the main df by row indices
-    get_main_df = function() {
+    extract_main_df = function(start_row_index, end_row_index) {
       # Stop if row indices are not defined
-      if (is.null(self$main_df_start_row_index) || 
-          is.null(self$main_df_end_row_index)) {
-        stop(paste("The main_df_start_row_index or main_df_end_row_index",
-                   "variable is not defined in child experiment class."))
+      if (is.null(start_row_index) || is.null(end_row_index)) {
+        stop(paste("The start_row_index or end_row_index was not defined to",
+                   "get the main experiment data (main_df)."))
       }
       
-      # Select main data from sheet data and convert it to data frame
+      # Get main data from start_row_index to end_row_index
       self$main_df <- as.data.frame(self$sheet_df[
-          self$main_df_start_row_index:self$main_df_end_row_index, 
-        ]
-      )
+        start_row_index:end_row_index, 
+      ])
+    },
+    
+    # Check for missing mass data in a column
+    # Condition is FALSE if data is missing and TRUE otherwise
+    check_missing = function(mass_vector) {
+      return(!is.na(mass_vector))
+    },
+    
+    # Check for negative mass data in a column
+    # Condition is FALSE if data is missing and TRUE otherwise
+    check_negative = function(mass_vector) {
+      return(mass_vector < 0)
     },
     
     # Write result to a new sheet
