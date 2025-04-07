@@ -49,3 +49,8 @@ po/*~
 rsconnect/
 .idea/
 backup.R
+
+
+# Code-generated files
+limiting_reactants.md
+limiting_reactants.pdf
