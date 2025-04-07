@@ -43,8 +43,6 @@ experiment$calculate_KOx_moles()
 experiment$set_expected_KOx_moles()
 # Requirement 2.c:
 experiment$calculate_CaOx_moles()
-# Add-on
-experiment$check_valid_amount_created()
 # Requirement 2.d + 3.a:
 experiment$create_KOx_and_CaOx_scatter_plot()
 # Requirement 4.a:

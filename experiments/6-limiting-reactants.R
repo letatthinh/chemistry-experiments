@@ -26,10 +26,6 @@ Experiment_6 <- R6Class(
     # mass in column D
     chk_ppt = NULL,
     
-    # Boolean vector for checking valid amount of the compound created in 
-    # column G
-    chk_amount_created = NULL,
-    
     # Molar mass of KOx
     MM_KOx = 184.23,
     
@@ -179,28 +175,14 @@ Experiment_6 <- R6Class(
       )
     },
     
-    # Check amount of the compound created in the experiment (column G)
-    # Notes:
-    #   - NA when G is NA.
-    #   - FALSE when G < 0.8 * expected_KOx_moles 
-    #     or G > 1.2 * expected_KOx_moles
-    check_valid_amount_created = function() {
-      self$chk_amount_created <- ifelse(
-        self$main_df$G >= 0.8 * self$expected_KOx_moles &
-          self$main_df$G <= 1.2 * self$expected_KOx_moles,
-        TRUE, 
-        FALSE
-      )
-    },
-    
     # Create scatter plot
     create_KOx_and_CaOx_scatter_plot = function() {
       # Extract column A, F and G into a new data frame 
       extracted_df <- self$main_df[, c("A", "F", "G")]
       
-      # Add red color for outliers, and green for valid data
+      # Add red color for outliers, and black for valid data
       extracted_df$color <- ifelse(
-        self$chk_amount_created,
+        private$check_valid_amount_created(),
         "black",
         "red"
       )
@@ -302,27 +284,16 @@ Experiment_6 <- R6Class(
       
       # Report stations with mass of precipitate could not be calculated in 
       # column E
-      # Check calculable ppt
-      # Notes:
-      #   - NA when chk_crucible and chk_ppt are both NA
-      #   - FALSE when either chk_crucible or chk_ppt is FALSE,
-      #   - TRUE when chk_crucible and chk_ppt are both TRUE
-      chk_calculable_ppt <- ifelse(
-        (self$chk_crucible == FALSE | self$chk_ppt == FALSE) | 
-          (xor(is.na(self$chk_crucible), is.na(self$chk_ppt))),
-        FALSE, 
-        TRUE
-      )
       
       private$write_incalculable_precipitate_mass_stations(
-        chk_calculable_ppt, file_connection
+        private$check_calculable_ppt(), file_connection
       )
       
       cat("\n\n", file = file_connection)
       
       # Report stations that are outliers in column G
       private$write_invalid_amount_created(
-        self$chk_amount_created, file_connection
+        private$check_valid_amount_created(), file_connection
       )
       
       # Remove empty lines at the bottom
@@ -330,6 +301,30 @@ Experiment_6 <- R6Class(
     }
   ),
   private = list(
+    # Check calculable ppt
+    # Notes:
+    #   - NA when chk_crucible and chk_ppt are both NA
+    #   - FALSE when either chk_crucible or chk_ppt is FALSE,
+    #   - TRUE when chk_crucible and chk_ppt are both TRUE
+    check_calculable_ppt = function() {
+      return(ifelse((self$chk_crucible == FALSE | self$chk_ppt == FALSE) |
+                    xor(is.na(self$chk_crucible), is.na(self$chk_ppt)),
+                    FALSE, 
+                    TRUE))
+    },
+    
+    # Check amount of the compound created in the experiment (column G)
+    # Notes:
+    #   - NA when G is NA.
+    #   - FALSE when G < 0.8 * expected_KOx_moles 
+    #     or G > 1.2 * expected_KOx_moles
+    check_valid_amount_created = function() {
+      return(ifelse(self$main_df$G >= 0.8 * self$expected_KOx_moles &
+                    self$main_df$G <= 1.2 * self$expected_KOx_moles,
+                    TRUE, 
+                    FALSE))
+    },
+    
     # Write to report the stations from a list provided
     write_stations = function(stations, file_connection) {
       for (index in 1:length(stations)) {
@@ -355,7 +350,7 @@ Experiment_6 <- R6Class(
       missing_data_stations <- self$main_df$A[check_vector == FALSE]
       
       if (length(missing_data_stations) > 0) {
-        cat("# Stations with missing data in column ", column_name, ":\n\n", 
+        cat("### Stations with missing data in column ", column_name, ":\n\n", 
             sep = "",
             file = file_connection)
         
@@ -376,7 +371,7 @@ Experiment_6 <- R6Class(
       ]
       
       if (length(invalid_mass_stations) > 0) {
-        cat("# Stations with invalid mass in column ", column_name, ":\n\n", 
+        cat("### Stations with invalid mass in column ", column_name, ":\n\n", 
             sep = "",
             file = file_connection)
         
@@ -397,7 +392,7 @@ Experiment_6 <- R6Class(
       ]
       
       if (length(incalculable_precipitate_stations) > 0) {
-        cat("# Stations for which a mass of precipitate could not be",
+        cat("### Stations for which a mass of precipitate could not be",
             "calculated:\n\n",
             file = file_connection)
         
@@ -416,7 +411,7 @@ Experiment_6 <- R6Class(
       ]
       
       if (length(invalid_amount_created_stations) > 0) {
-        cat("# Stations for which the amount of precipitate is identified as an",
+        cat("### Stations for which the amount of precipitate is identified as an",
             "outlier:\n\n",
             file = file_connection)
         
