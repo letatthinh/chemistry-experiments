@@ -266,21 +266,39 @@ Experiment_6 <- R6Class(
       # Close the file connection on exit
       on.exit(close(file_connection))
       
-      # Report stations with missing data in columns B, C, and D
-      private$write_missing_data_stations("B", self$chkB, file_connection)
-      cat("\n\n", file = file_connection)
-      private$write_missing_data_stations("C", self$chkC, file_connection)
-      cat("\n\n", file = file_connection)
-      private$write_missing_data_stations("D", self$chkD, file_connection)
-      cat("\n\n", file = file_connection)
+      # Report stations that have missing data
+      # Case 1: Stations with missing data in all 3 columns B, C, and D
+      missing_data_in_all_BCD_stations <- 
+        private$write_missing_data_in_BCD_stations(file_connection)
+      # Case 2: At least 1 column has data among 3 columns B, C and D, report
+      #         columns have missing data separately. Make sure these values are
+      #         not in missing_data_in_all_BCD_stations
+      private$write_missing_data_stations_by_column(
+        "B",
+        self$chkB, 
+        missing_data_in_all_BCD_stations, 
+        file_connection)
+      private$write_missing_data_stations_by_column(
+        "C",
+        self$chkC, 
+        missing_data_in_all_BCD_stations, 
+        file_connection)
+      private$write_missing_data_stations_by_column(
+        "D", 
+        self$chkD, 
+        missing_data_in_all_BCD_stations, 
+        file_connection)
       
       # Report stations with invalid mass in columns B, C, and D
-      private$write_invalid_mass_stations("B", self$chk_mass, file_connection)
-      cat("\n\n", file = file_connection)
-      private$write_invalid_mass_stations("C", self$chk_crucible, file_connection)
-      cat("\n\n", file = file_connection)
-      private$write_invalid_mass_stations("D", self$chk_ppt, file_connection)
-      cat("\n\n", file = file_connection)
+      private$write_invalid_mass_stations_by_column("B", 
+                                                    self$chk_mass, 
+                                                    file_connection)
+      private$write_invalid_mass_stations_by_column("C", 
+                                                    self$chk_crucible, 
+                                                    file_connection)
+      private$write_invalid_mass_stations_by_column("D", 
+                                                    self$chk_ppt, 
+                                                    file_connection)
       
       # Report stations with mass of precipitate could not be calculated in 
       # column E
@@ -289,10 +307,8 @@ Experiment_6 <- R6Class(
         private$check_calculable_ppt(), file_connection
       )
       
-      cat("\n\n", file = file_connection)
-      
       # Report stations that are outliers in column G
-      private$write_invalid_amount_created(
+      private$write_invalid_amount_created_stations(
         private$check_valid_amount_created(), file_connection
       )
       
@@ -330,107 +346,151 @@ Experiment_6 <- R6Class(
       for (index in 1:length(stations)) {
         # Add a new line if it is not the last row
         if (index < length(stations)) {
-          cat("-", stations[index], "\n", 
-              file = file_connection)
+          cat("-", stations[index], "\n", file = file_connection)
         } else {
-          cat("-", stations[index], 
-              file = file_connection)
+          cat("-", stations[index], file = file_connection)
         }
       }
     },
     
-    # Write to the report the stations that are missing data in a column
-    write_missing_data_stations = function(
-      column_name,
-      check_vector,
+    # Write to the report the stations that are missing data in all 3 columns B, 
+    # C, and D
+    write_missing_data_in_BCD_stations = function(
       file_connection
     ) {
-      # Collect stations with missing data
-      # Note: Station names are in column A
-      missing_data_stations <- self$main_df$A[check_vector == FALSE]
+      missing_data_in_all_BCD_stations <- self$main_df$A[
+        which(!self$chkB & !self$chkC & !self$chkD)
+      ]
+      
+      if (length(missing_data_in_all_BCD_stations) > 0) {
+        cat("### Stations with missing data in all 3 columns B, C, and D:\n\n", 
+            sep = "",
+            file = file_connection)
+        
+        private$write_stations(missing_data_in_all_BCD_stations, 
+                               file_connection)
+        
+        return(missing_data_in_all_BCD_stations)
+      }
+    },
+    
+    # Write to the report the stations that are missing data by column
+    write_missing_data_stations_by_column = function(
+      column_name,
+      check_vector,
+      exclude_stations,
+      file_connection
+    ) {
+      # Collect stations in column A with missing data and not in the exclude
+      # station list
+      missing_data_stations <- self$main_df$A[which(
+        !check_vector & !(self$main_df$A %in% exclude_stations)
+      )]
       
       if (length(missing_data_stations) > 0) {
-        cat("### Stations with missing data in column ", column_name, ":\n\n", 
+        cat("\n\n### Stations with missing data in column ", 
+            column_name, 
+            ":\n\n",
             sep = "",
             file = file_connection)
         
         private$write_stations(missing_data_stations, file_connection)
+        
+        return(missing_data_stations)
       }
     },
     
     # Write to the report the stations that have invalid data in a column.
-    write_invalid_mass_stations = function(
+    write_invalid_mass_stations_by_column = function(
       column_name,
       check_vector,
       file_connection
     ) {
-      # Collect stations with invalid mass data
-      # Note: Station names are in column A
+      # Collect stations in column A with invalid mass data
       invalid_mass_stations <- self$main_df$A[
         check_vector == FALSE & !is.na(check_vector)
       ]
       
       if (length(invalid_mass_stations) > 0) {
-        cat("### Stations with invalid mass in column ", column_name, ":\n\n", 
+        cat("\n\n### Stations with invalid mass data in column ", 
+            column_name, 
+            ":\n\n", 
             sep = "",
             file = file_connection)
         
         private$write_stations(invalid_mass_stations, file_connection)
+        
+        return(invalid_mass_stations)
       }
     },
     
     # Write to the report the stations having mass of precipitate could not be 
-    # calculated
+    # calculated (column E)
     write_incalculable_precipitate_mass_stations = function(
       check_vector,
       file_connection
     ) {
-      # Collect stations with incalculable precipitate
-      # Note: Station names are in column A
+      # Collect stations in column A with incalculable precipitate
       incalculable_precipitate_stations <- self$main_df$A[
         check_vector == FALSE & !is.na(check_vector)
       ]
       
       if (length(incalculable_precipitate_stations) > 0) {
-        cat("### Stations for which a mass of precipitate could not be",
-            "calculated:\n\n",
+        cat("\n\n### Stations for which a mass of precipitate could not be",
+            "calculated (column E):\n\n",
             file = file_connection)
         
         private$write_stations(incalculable_precipitate_stations, 
                                file_connection)
+        
+        return(incalculable_precipitate_stations)
       }
     },
     
     # Write to the report the stations having invalid amount of the compound 
-    # created
-    write_invalid_amount_created = function(check_vector, file_connection) {
-      # Collect stations with incalculable precipitate
-      # Note: Station names are in column A
+    # created (column G)
+    write_invalid_amount_created_stations = function(
+      check_vector, 
+      file_connection
+    ) {
+      # Collect stations in column A with incalculable precipitate
       invalid_amount_created_stations <- self$main_df$A[
         check_vector == FALSE & !is.na(check_vector)
       ]
       
       if (length(invalid_amount_created_stations) > 0) {
-        cat("### Stations for which the amount of precipitate is identified as an",
-            "outlier:\n\n",
+        cat("\n\n### Stations for which the amount of precipitate is",
+            "identified as an outlier (column G):\n\n",
             file = file_connection)
         
         private$write_stations(invalid_amount_created_stations, 
                                file_connection)
+        
+        return(invalid_amount_created_stations)
       }
     },
     
-    # Write to the report the stations having invalid amount of the compound 
-    # created
+    # Remove empty lines at the end from the report
     remove_empty_lines_in_report = function(file_path) {
+      # Read the file
       lines <- readLines(file_path, warn = FALSE)
       
       if (length(lines) > 0) {
-        # Get from the first line till the last line with text
-        trimmed_lines <- lines[1:max(which(lines != ""))]
+        # Trim leading empty lines at the top
+        while (length(lines) > 0 && !grepl("\\S", lines[1])) {
+          lines <- tail(lines, -1)
+        }
         
-        # Write back to the file
-        writeLines(trimmed_lines, file_path)
+        # Trim trailing empty lines at the bottom
+        while (length(lines) > 0 && !grepl("\\S", lines[length(lines)])) {
+          lines <- head(lines, -1)
+        }
+        
+        # Write the cleaned lines back to the file
+        writeLines(lines, file_path)
+        
+        # Return the cleaned content
+        return(lines)
       }
     }
   )
