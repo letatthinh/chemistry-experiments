@@ -40,7 +40,9 @@ Experiment_6 <- R6Class(
     expected_KOx_moles = NULL,
     
     # Constructor - Read excel file
-    initialize = function(infile, main_sheet_name, experiment_name) {
+    initialize = function(infile = NULL, 
+                          main_sheet_name = NULL, 
+                          experiment_name = NULL) {
       # Set infile
       self$infile <- infile
       # Set main_sheet_name

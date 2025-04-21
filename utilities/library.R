@@ -38,3 +38,9 @@ load_or_install_package("openxlsx2")
 
 # For handling overlapping text labels
 load_or_install_package("ggrepel")
+
+# For writing unit tests
+load_or_install_package("testthat")
+
+# For checking test coverage
+load_or_install_package("covr")

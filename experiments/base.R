@@ -38,9 +38,6 @@ Base_Experiment <- R6Class(
       
       # 'self' keyword helps reference to class properties and methods
       self$sheet_df <- read_xlsx(self$infile, col_names=has_column_names)
-      
-      # Check if the experiment has a matching name in cell A2
-      self$check_experiment_name()
     },
     
     # Check if the experiment name is provided in cell A2
@@ -56,7 +53,8 @@ Base_Experiment <- R6Class(
       # Stop if experiment name in cell A2 is NA or contain only space
       # characters
       if (is.na(cell_a2_value) || trimws(cell_a2_value) == "") {
-        stop("The experiment name in cell A2 is not provided.")
+        stop(paste("The experiment name in cell A2 in the excel file", 
+                   "is not provided."))
       }
       
       # Stop if experiment name in cell A2 is not correct
@@ -64,6 +62,8 @@ Base_Experiment <- R6Class(
         stop(paste0("The experiment name in cell A2 is not correct. ",
                    "The value should be '", self$experiment_name, "'."))
       }
+      
+      return(TRUE)
     },
     
     # Get the main df by row indices

@@ -16,13 +16,14 @@ source("experiments/6-limiting-reactants.R")
 main_df_start_row_index = 9
 main_df_end_row_index = 32
 
-# Requirement 1.a: Create an object of the Experiment_6 class and verify the
-# experiment name in cell A2
+# Requirement 1.a: Create an object of the Experiment_6 class
 experiment <- Experiment_6$new(
-  infile = "expt06.xlsx",
+  infile = "data/expt06.xlsx",
   main_sheet_name = "class data",
   experiment_name = "Experiment 6:  Limiting Reactants"
 )
+# Check if the experiment name has a matching name in cell A2
+experiment$check_experiment_name()
 # Requirement 1.b: Collect main experiment data from row 9 to row 32 and check 
 # missing data in columns B, C, and D
 experiment$extract_main_df(main_df_start_row_index, main_df_end_row_index)
