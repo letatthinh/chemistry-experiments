@@ -1,4 +1,4 @@
-test_that("Experiment 6 - Class initialization and properties", {
+test_that("Base experiment - Class initialization and properties", {
   infile_test <- "data/expt06.xlsx"
   main_sheet_name_test <- "class data"
   experiment_name_test <- "Experiment 6:  Limiting Reactants"
@@ -20,14 +20,18 @@ test_that("Experiment 6 - Class initialization and properties", {
   expect_equal(experiment_6$experiment_name, experiment_name_test)
 })
 
-test_that("Experiment 6 - File path (infile) is not defined", {
+
+
+test_that("Base experiment - Data file path (infile) is not defined", {
   # Expect an error message
   expect_error(Experiment_6$new(),
                paste("The infile variable is not defined in child experiment",
                      "class."))
 })
 
-test_that("Experiment 6 - Experiment name (experiment_name) is not defined", {
+
+
+test_that("Base experiment - Experiment name is not defined", {
   infile_test <- "data/expt06.xlsx"
 
   # Initialize class object
@@ -37,13 +41,14 @@ test_that("Experiment 6 - Experiment name (experiment_name) is not defined", {
 
   # Expect an error message
   expect_error(experiment_6$check_experiment_name(),
-               paste("The experiment_name variable is not defined",
-                     "in child experiment class."))
+               "The experiment_name parameter is not defined")
 })
 
-test_that(paste("Experiment 6 - Experiment name in cell A2 in the excel file",
-                "is not provided"), {
-  infile_test <- "data/test-experiment-name-not-provided-in-cell-A2.xlsx"
+
+
+test_that(paste("Base experiment - Experiment name in cell A2",
+                "in the excel file is missing"), {
+  infile_test <- "data/experiment-name-not-provided-in-cell-A2.xlsx"
   experiment_name_test <- "Experiment 6:  Limiting Reactants"
 
   # Initialize class object
@@ -54,6 +59,39 @@ test_that(paste("Experiment 6 - Experiment name in cell A2 in the excel file",
 
   # Expect an error message
   expect_error(experiment_6$check_experiment_name(),
-               paste("The experiment name in cell A2 in the excel file",
-                     "is not provided."))
+               "The experiment name in cell A2 in the excel file is missing.")
+})
+
+
+
+test_that("Base experiment - Experiment name in cell A2 is incorrect", {
+  infile_test <- "data/incorrect-experiment-name-in-cell-A2.xlsx"
+  experiment_name_test <- "Experiment 6:  Limiting Reactants"
+
+  # Initialize class object
+  experiment_6 <- Experiment_6$new(
+    infile = infile_test,
+    experiment_name = experiment_name_test
+  )
+
+  # Expect an error message
+  expect_error(experiment_6$check_experiment_name(),
+               paste0("The experiment name in cell A2 is incorrect. The value ",
+                      "should be '", experiment_6$experiment_name, "'."))
+})
+
+
+
+test_that("Base experiment - Experiment name in cell A2 is correct", {
+  infile_test <- "data/expt06.xlsx"
+  experiment_name_test <- "Experiment 6:  Limiting Reactants"
+  
+  # Initialize class object
+  experiment_6 <- Experiment_6$new(
+    infile = infile_test,
+    experiment_name = experiment_name_test
+  )
+  
+  # Expect an error message
+  expect_equal(experiment_6$check_experiment_name(), TRUE)
 })

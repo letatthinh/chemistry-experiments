@@ -46,21 +46,19 @@ Base_Experiment <- R6Class(
       
       # Stop if experiment name is not defined
       if (is.null(self$experiment_name)) {
-        stop(paste("The experiment_name variable is not defined", 
-                   "in child experiment class."))
+        stop("The experiment_name parameter is not defined")
       }
       
       # Stop if experiment name in cell A2 is NA or contain only space
       # characters
       if (is.na(cell_a2_value) || trimws(cell_a2_value) == "") {
-        stop(paste("The experiment name in cell A2 in the excel file", 
-                   "is not provided."))
+        stop("The experiment name in cell A2 in the excel file is missing.")
       }
       
-      # Stop if experiment name in cell A2 is not correct
+      # Stop if experiment name in cell A2 doesn't match the provided value
       if (cell_a2_value != self$experiment_name) {
-        stop(paste0("The experiment name in cell A2 is not correct. ",
-                   "The value should be '", self$experiment_name, "'."))
+        stop(paste0("The experiment name in cell A2 is incorrect. The value ",
+                    "should be '", self$experiment_name, "'."))
       }
       
       return(TRUE)
