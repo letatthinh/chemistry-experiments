@@ -1,5 +1,4 @@
 test_that("Experiment 6 - Class initialization and properties", {
-  print(paste("working directory:", getwd()))
   infile_test <- "data/expt06.xlsx"
   main_sheet_name_test <- "class data"
   experiment_name_test <- "Experiment 6:  Limiting Reactants"

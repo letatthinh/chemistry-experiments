@@ -1,3 +1,6 @@
+# General notes:
+#   - Set the working directory to the this file
+
 # LOAD SOURCES -----------------------------------------------------------------
 # Must always load library.R first and be careful with the order of other source
 # files.

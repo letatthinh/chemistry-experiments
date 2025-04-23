@@ -18,7 +18,7 @@ main_df_end_row_index = 32
 
 # Requirement 1.a: Create an object of the Experiment_6 class
 experiment <- Experiment_6$new(
-  infile = "data/expt06.xlsx",
+  infile = "expt06.xlsx",
   main_sheet_name = "class data",
   experiment_name = "Experiment 6:  Limiting Reactants"
 )
