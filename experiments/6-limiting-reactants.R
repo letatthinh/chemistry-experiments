@@ -50,9 +50,9 @@ Experiment_6 <- R6Class(
     },
     
     # Override the get main df in parent
-    extract_main_df = function(start_row_index, end_row_index) {
+    set_main_df = function(start_row_index, end_row_index) {
       # Call the get_main_df() function in parent
-      super$extract_main_df(start_row_index, end_row_index)
+      super$set_main_df(start_row_index, end_row_index)
       
       # Rename columns (from A to G)
       names(self$main_df) <- LETTERS[
