@@ -43,14 +43,10 @@ Experiment_6 <- R6Class(
     initialize = function(infile = NULL, 
                           main_sheet_name = NULL, 
                           experiment_name = NULL) {
-      # Set infile
-      self$infile <- infile
-      # Set main_sheet_name
-      self$main_sheet_name <- main_sheet_name
-      # Set experiment_name
-      self$experiment_name <- experiment_name
       # Call parent's constructor
-      super$initialize()
+      super$initialize(infile = infile,
+                       main_sheet_name = main_sheet_name,
+                       experiment_name = experiment_name)
     },
     
     # Override the get main df in parent

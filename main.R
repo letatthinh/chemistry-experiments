@@ -26,7 +26,7 @@ experiment <- Experiment_6$new(
 experiment$check_experiment_name()
 # Requirement 1.b: Collect main experiment data from row 9 to row 32 and check 
 # missing data in columns B, C, and D
-experiment$extract_main_df(main_df_start_row_index, main_df_end_row_index)
+experiment$set_main_df(main_df_start_row_index, main_df_end_row_index)
 experiment$chkB <- experiment$check_missing(experiment$main_df$B)
 experiment$chkC <- experiment$check_missing(experiment$main_df$C)
 experiment$chkD <- experiment$check_missing(experiment$main_df$D)

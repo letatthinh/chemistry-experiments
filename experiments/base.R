@@ -27,9 +27,21 @@ Base_Experiment <- R6Class(
     
     # Constructor - Read excel file as default
     initialize = function(
+      infile = NULL,
+      main_sheet_name = NULL,
+      experiment_name = NULL,
     # has_column_names: indicate if the first row has column names
       has_column_names = FALSE
     ) {
+      # Set infile
+      self$infile <- infile
+      
+      # Set main_sheet_name
+      self$main_sheet_name <- main_sheet_name
+      
+      # Set experiment_name
+      self$experiment_name <- experiment_name
+      
       # Stop if experiment name is not defined
       if (is.null(self$infile)) {
         stop(paste("The infile variable is not defined in child experiment", 
@@ -65,13 +77,7 @@ Base_Experiment <- R6Class(
     },
     
     # Get the main df by row indices
-    extract_main_df = function(start_row_index, end_row_index) {
-      # Stop if row indices are not defined
-      if (is.null(start_row_index) || is.null(end_row_index)) {
-        stop(paste("The start_row_index or end_row_index was not defined to",
-                   "get the main experiment data (main_df)."))
-      }
-      
+    set_main_df = function(start_row_index, end_row_index) {
       # Get main data from start_row_index to end_row_index
       self$main_df <- as.data.frame(self$sheet_df[
         start_row_index:end_row_index, 
@@ -85,7 +91,7 @@ Base_Experiment <- R6Class(
     },
     
     # Check for negative mass data in a column
-    # Condition is FALSE if data is missing and TRUE otherwise
+    # Condition is TRUE if data is negative and FALSE otherwise
     check_negative = function(mass_vector) {
       return(mass_vector < 0)
     },
