@@ -8,8 +8,6 @@ Base_Experiment <- R6Class(
   public = list(
     # Input file name
     infile = NULL,
-    # Name of the main sheet
-    main_sheet_name = NULL,
     # Name of the experiment - should match value in cell A2
     experiment_name = NULL,
     # Sheet data
@@ -28,16 +26,12 @@ Base_Experiment <- R6Class(
     # Constructor - Read excel file as default
     initialize = function(
       infile = NULL,
-      main_sheet_name = NULL,
       experiment_name = NULL,
     # has_column_names: indicate if the first row has column names
       has_column_names = FALSE
     ) {
       # Set infile
       self$infile <- infile
-      
-      # Set main_sheet_name
-      self$main_sheet_name <- main_sheet_name
       
       # Set experiment_name
       self$experiment_name <- experiment_name
@@ -98,13 +92,14 @@ Base_Experiment <- R6Class(
     
     # Write result to a new sheet
     write_result = function(
-      new_sheet_name,
+      from_sheet_name,
+      to_sheet_name,
       df,
       df_start_row_index,
       df_start_column_index = 1
     ) {
       # Stop main sheet name is not defined
-      if (is.null(self$main_sheet_name)) {
+      if (is.null(from_sheet_name)) {
         stop(paste("The main_sheet_name variable is not defined in child",
                    "experiment class."))
       }
@@ -113,21 +108,21 @@ Base_Experiment <- R6Class(
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_load.html?q=wb_load#null
       workbook <- wb_load(self$infile)
       
-      # Remove if the new_sheet_name exists
-      if (new_sheet_name %in% workbook$get_sheet_names()) {
-        workbook <- wb_remove_worksheet(workbook, new_sheet_name)
+      # Remove if the to_sheet_name exists
+      if (to_sheet_name %in% workbook$get_sheet_names()) {
+        workbook <- wb_remove_worksheet(workbook, to_sheet_name)
       }
       
-      # Clone the main_sheet_name to new_sheet_name
+      # Clone the main_sheet_name to to_sheet_name
       # Note: References to sheet names in formulas, charts, pivot tables, etc. 
       # may not be updated. Some elements like named ranges and slicers cannot 
       # be cloned yet.
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_clone_worksheet.html
-      workbook$clone_worksheet(self$main_sheet_name, new = new_sheet_name)
+      workbook$clone_worksheet(from_sheet_name, new = to_sheet_name)
       
       # Write new_main_df
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_add_data.html
-      workbook$add_data(new_sheet_name,
+      workbook$add_data(to_sheet_name,
                         df,
                         start_row = df_start_row_index,
                         start_col = df_start_column_index,

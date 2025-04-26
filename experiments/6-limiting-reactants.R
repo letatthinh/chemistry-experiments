@@ -40,12 +40,10 @@ Experiment_6 <- R6Class(
     expected_KOx_moles = NULL,
     
     # Constructor - Read excel file
-    initialize = function(infile = NULL, 
-                          main_sheet_name = NULL, 
+    initialize = function(infile = NULL,
                           experiment_name = NULL) {
       # Call parent's constructor
       super$initialize(infile = infile,
-                       main_sheet_name = main_sheet_name,
                        experiment_name = experiment_name)
     },
     

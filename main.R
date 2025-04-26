@@ -19,7 +19,6 @@ main_df_end_row_index = 32
 # Requirement 1.a: Create an object of the Experiment_6 class
 experiment <- Experiment_6$new(
   infile = "expt06.xlsx",
-  main_sheet_name = "class data",
   experiment_name = "Experiment 6:  Limiting Reactants"
 )
 # Check if the experiment name has a matching name in cell A2
@@ -49,7 +48,8 @@ experiment$create_KOx_and_CaOx_scatter_plot()
 # Requirement 4.a:
 result_df <- experiment$create_result_df()
 experiment$write_result(
-  new_sheet_name = "complete",
+  from_sheet_name = "class data",
+  to_sheet_name = "complete",
   result_df,
   main_df_start_row_index)
 # Requirement 4.b:
