@@ -33,9 +33,6 @@ load_or_install_package("ggplot2")
 # For reading or writing data to excel
 load_or_install_package("openxlsx2")
 
-# For reading or writing data to excel
-load_or_install_package("openxlsx2")
-
 # For handling overlapping text labels
 load_or_install_package("ggrepel")
 

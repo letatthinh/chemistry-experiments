@@ -92,18 +92,13 @@ Base_Experiment <- R6Class(
     
     # Write result to a new sheet
     write_result = function(
+      df,
       from_sheet_name,
       to_sheet_name,
-      df,
       df_start_row_index,
-      df_start_column_index = 1
+      df_start_column_index = 1,
+      file_path = self$infile
     ) {
-      # Stop main sheet name is not defined
-      if (is.null(from_sheet_name)) {
-        stop(paste("The main_sheet_name variable is not defined in child",
-                   "experiment class."))
-      }
-      
       # Create workbook object
       # Ref: https://janmarvin.github.io/openxlsx2/reference/wb_load.html?q=wb_load#null
       workbook <- wb_load(self$infile)
@@ -126,11 +121,12 @@ Base_Experiment <- R6Class(
                         df,
                         start_row = df_start_row_index,
                         start_col = df_start_column_index,
-                        # Avoid writing column names of new_main_df
+                        # Avoid writing column names of df
                         col_names = FALSE)
       
-      # Save the workbook (overwrite the existing file)
-      workbook$save(self$infile, overwrite=TRUE)
+      workbook$save(file_path, overwrite=TRUE)
+      
+      return(TRUE)
     }
   )
 )

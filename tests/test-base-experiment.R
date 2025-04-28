@@ -138,3 +138,45 @@ test_that("Base experiment - Check negative mass data", {
   vector_result <- experiment$check_negative(vector_test)
   expect_setequal(vector_result, expected_vector_result)
 })
+
+
+
+test_that("Base experiment - Write result", {
+  infile_test <- "data/expt06.xlsx"
+  # Create vectors for the 3 columns
+  col1 <- c(0.231, 0.432, 0.112, 0.754, 0.765)
+  col2 <- c(0.783, 0.567, 0.891, 0.634, 0.284)
+  col3 <- c(0.874, 0.912, 0.451, 0.333, 0.567)
+  # Combine the vectors into a DataFrame
+  df <- data.frame(col1, col2, col3)
+  
+  # Initialize class object
+  experiment <- Base_Experiment$new(
+    infile = infile_test
+  )
+  
+  # Specify the file path
+  output_file_path <- "data/write-result-output.xlsx"
+  
+  if (file.exists(output_file_path)) {
+    # Remove the write-result file
+    file.remove(output_file_path)
+  }
+  
+  expect_true(experiment$write_result(
+    df = df,
+    from_sheet_name = "class data",
+    to_sheet_name = "complete",
+    df_start_row_index = 9,
+    file_path = output_file_path))
+  
+  # Get new sheetname data from the out file
+  new_sheet_df <- read_xlsx(output_file_path, 
+                            sheet = "complete", 
+                            col_names=FALSE)
+  
+  # Check if cell B9 is euqal "0.783"
+  cell_b9_value <- experiment$excel_utility$get_cell_value(new_sheet_df, 
+                                                           "B9")
+  expect_equal(cell_b9_value, "0.783")
+})

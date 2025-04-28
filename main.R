@@ -48,10 +48,10 @@ experiment$create_KOx_and_CaOx_scatter_plot()
 # Requirement 4.a:
 result_df <- experiment$create_result_df()
 experiment$write_result(
+  df = result_df,
   from_sheet_name = "class data",
   to_sheet_name = "complete",
-  result_df,
-  main_df_start_row_index)
+  df_start_row_index = main_df_start_row_index)
 # Requirement 4.b:
 experiment$write_plot_result()
 # Requirement 4.c:
