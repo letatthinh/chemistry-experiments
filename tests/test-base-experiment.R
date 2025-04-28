@@ -1,20 +1,15 @@
 test_that("Base experiment - Class initialization and properties", {
   infile_test <- "data/expt06.xlsx"
-  main_sheet_name_test <- "class data"
   experiment_name_test <- "Experiment 6:  Limiting Reactants"
   
   # Initialize class object
   experiment <- Base_Experiment$new(
     infile = infile_test,
-    main_sheet_name = main_sheet_name_test,
     experiment_name = experiment_name_test
   )
   
   # Expect infile is set
   expect_equal(experiment$infile, infile_test)
-  
-  # Expect main_sheet_name is set
-  expect_equal(experiment$main_sheet_name, main_sheet_name_test)
   
   # Expect experiment_name is set
   expect_equal(experiment$experiment_name, experiment_name_test)
