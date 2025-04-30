@@ -72,6 +72,7 @@ Experiment_6 <- R6Class(
     #   - NA when chkB is FALSE.
     #   - FALSE when chkB is TRUE and (chemical compound mass data (B) is 
     #     negative or not in range [0.080, 0.340])
+    #   - TRUE otherwise
     check_chemical_compound_mass = function() {
       self$chk_mass <- ifelse(
         self$chkB,
@@ -87,6 +88,7 @@ Experiment_6 <- R6Class(
     # Notes
     #   - NA when chkC is FALSE.
     #   - FALSE when chkC is TRUE and crucible mass data (C) is negative.
+    #   - TRUE otherwise
     check_crucible_mass = function() {
       self$chk_crucible <- ifelse(
         self$chkC,
@@ -103,20 +105,21 @@ Experiment_6 <- R6Class(
     #     smaller than crucible mass data (C)
     check_total_crucible_and_precipitate_mass = function() {
       # If chkD is TRUE and chkC is TRUE
-      self$chk_ppt <- ifelse(self$chkD & self$chkC,
+      self$chk_ppt <- ifelse(
+        self$chkD & self$chkC,
         # FALSE when D is negative or D < C
         ifelse(self$check_negative(self$main_df$D) | 
-               self$main_df$D < self$main_df$C, 
-          FALSE, 
-          TRUE),
+               self$main_df$D < self$main_df$C,
+               FALSE, 
+               TRUE),
         # If chkD is TRUE and chkC is FALSE
         ifelse(self$chkD & !self$chkC,
-          # FALSE when D is negative
-          ifelse(self$check_negative(self$main_df$D), 
-            FALSE, 
-            TRUE),
-          # If chkD is FALSE, assign NA
-          NA)
+               # FALSE when D is negative
+               ifelse(self$check_negative(self$main_df$D), 
+                      FALSE, 
+                      TRUE),
+               # If chkD is FALSE, assign NA
+               NA)
       )
     },
     

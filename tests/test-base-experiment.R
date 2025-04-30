@@ -119,8 +119,9 @@ test_that("Base experiment - Check missing mass data", {
     infile = infile_test
   )
   
+  # Compare elements in each vector
   vector_result <- experiment$check_missing(vector_test)
-  expect_setequal(vector_result, expected_vector_result)
+  expect_equal(vector_result, expected_vector_result)
 })
 
 
@@ -135,8 +136,9 @@ test_that("Base experiment - Check negative mass data", {
     infile = infile_test
   )
   
+  # Compare elements in each vector
   vector_result <- experiment$check_negative(vector_test)
-  expect_setequal(vector_result, expected_vector_result)
+  expect_equal(vector_result, expected_vector_result)
 })
 
 
