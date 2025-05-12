@@ -90,6 +90,11 @@ Base_Experiment <- R6Class(
       return(mass_vector < 0)
     },
     
+    # Write plot to pdf
+    write_plot_result = function(file_path, width = 12, height = 8) {
+      ggsave(file_path, plot = self$plot, width = width, height = height)
+    },
+    
     # Write result to a new sheet
     write_result = function(
       df,

@@ -53,9 +53,9 @@ experiment$write_result(
   to_sheet_name = "complete",
   df_start_row_index = main_df_start_row_index)
 # Requirement 4.b:
-experiment$write_plot_result()
+experiment$write_plot_result(file_path="limiting_reactants.pdf")
 # Requirement 4.c:
-experiment$write_validity_report()
+experiment$write_validity_report(file_path = "limiting_reactants.md")
 
 print(experiment$main_df)
 print(experiment$chkB)

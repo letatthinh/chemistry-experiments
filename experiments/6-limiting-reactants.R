@@ -225,11 +225,6 @@ Experiment_6 <- R6Class(
       self$plot
     },
     
-    # Write plot to pdf
-    write_plot_result = function() {
-      ggsave("limiting_reactants.pdf", plot = self$plot, width = 12, height = 8)
-    },
-    
     # Create result df
     create_result_df = function() {
       # Create a copy of main_df and 
@@ -251,10 +246,7 @@ Experiment_6 <- R6Class(
     },
     
     # Write validity report
-    write_validity_report = function() {
-      # Specify the file path
-      file_path <- "limiting_reactants.md"
-      
+    write_validity_report = function(file_path) {
       # Create if the file doesn't exist, overwrite otherwise
       file.create(file_path)
       
@@ -478,11 +470,6 @@ Experiment_6 <- R6Class(
         # Trim leading empty lines at the top
         while (length(lines) > 0 && !grepl("\\S", lines[1])) {
           lines <- tail(lines, -1)
-        }
-        
-        # Trim trailing empty lines at the bottom
-        while (length(lines) > 0 && !grepl("\\S", lines[length(lines)])) {
-          lines <- head(lines, -1)
         }
         
         # Write the cleaned lines back to the file
